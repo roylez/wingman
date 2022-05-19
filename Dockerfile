@@ -1,6 +1,6 @@
 ARG ELIXIR=1.13.4
 ARG ERLANG=23.3.4.14
-ARG ALPINE=3.15.0
+ARG ALPINE=3.15.3
 
 FROM hexpm/elixir:${ELIXIR}-erlang-${ERLANG}-alpine-${ALPINE} as builder
 
