@@ -18,10 +18,12 @@ defmodule Wingman.Handler do
   def init(_) do
     webhook = Application.get_env(:wingman, :webhook)
     highlights = ~r(#{Application.get_env(:wingman, :highlights)})iu
+    me = MM.me()
+    Logger.info "USER ID: #{me}"
     { :ok, %__MODULE__{
       webhook: webhook,
       highlights: highlights,
-      me: MM.me(),
+      me: me,
     } }
   end
 
@@ -49,6 +51,7 @@ defmodule Wingman.Handler do
   def _send_webhook(hook, data) do
     header = [{"Content-Type", "text/plain"}]
     Task.start( fn -> :hackney.post(hook, header, data) end)
+    Logger.info "WEBHOOK message: #{data}"
   end
 
 end
