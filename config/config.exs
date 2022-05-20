@@ -1,8 +1,6 @@
 import Config
 
 config :logger, :console,
-  metadata: [:channel],
-  level: config_env() == :prod && :info || :debug,
-  handle_sasl_reports: config_env() == :dev
+  format: "$date $time $levelpad$message\n"
 
 config :tesla, adapter: Tesla.Adapter.Hackney

@@ -29,8 +29,7 @@ defmodule Wingman.Mattermost.Websocket do
     end
   end
 
-  def handle_disconnect(status, state) do
-    Logger.warn "Disconnected, status: #{inspect status}"
+  def handle_disconnect(_status, state) do
     { :reconnect, state }
   end
 
