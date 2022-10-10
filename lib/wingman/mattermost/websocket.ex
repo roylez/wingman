@@ -59,6 +59,8 @@ defmodule Wingman.Mattermost.Websocket do
     channel_viewed
     preferences_changed
     sidebar_category_updated
+    direct_added
+    new_user
   )
   do
     { :ok, seq }
