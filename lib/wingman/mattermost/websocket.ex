@@ -61,6 +61,7 @@ defmodule Wingman.Mattermost.Websocket do
     sidebar_category_updated
     direct_added
     new_user
+    leave_team
   )
   do
     { :ok, seq }
