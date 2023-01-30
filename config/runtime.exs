@@ -6,7 +6,8 @@ config :wingman, :mattermost,
 
 config :wingman,
   webhook: System.get_env("WINGMAN_WEBHOOK"),
-  highlights: System.get_env("WINGMAN_HIGHLIGHTS")
+  highlights: System.get_env("WINGMAN_HIGHLIGHTS"),
+  debug: System.get_env("WINGMAN_DEBUG") == "1"
 
 config :logger, :console,
   level: System.get_env("WINGMAN_DEBUG") == "1" && :debug || :info

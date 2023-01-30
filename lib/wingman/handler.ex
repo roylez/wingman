@@ -50,8 +50,12 @@ defmodule Wingman.Handler do
 
   def _send_webhook(hook, data) do
     header = [{"Content-Type", "text/plain"}]
-    Task.start( fn -> :hackney.post(hook, header, data) end)
+    task = Task.async( fn -> :hackney.post(hook, header, data) end)
     Logger.info "WEBHOOK message: #{data}"
+    if Application.get_env(:wingman, :debug) do
+      res = Task.await(task)
+      Logger.debug inspect(res)
+    end
   end
 
 end
