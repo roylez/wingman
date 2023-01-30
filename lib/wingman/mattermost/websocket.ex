@@ -29,7 +29,13 @@ defmodule Wingman.Mattermost.Websocket do
     end
   end
 
+  def handle_connect(_conn, state) do
+    Logger.info("Mattermost Websocket Connected!")
+    {:ok, state}
+  end
+
   def handle_disconnect(_status, state) do
+    Logger.warn("Mattermost Websocket Disconnected!")
     { :reconnect, state }
   end
 
