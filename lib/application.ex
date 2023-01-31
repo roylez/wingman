@@ -11,6 +11,7 @@ defmodule Wingman.Application do
       Wingman.Mattermost.Websocket,
       Wingman.Mattermost,
       Wingman.Handler,
+      Wingman.TelegramBot,
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

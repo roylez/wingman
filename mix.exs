@@ -8,7 +8,6 @@ defmodule Wingman.MixProject do
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      xref: [exclude: Luerl],
       releases: releases(),
     ]
   end
@@ -36,6 +35,7 @@ defmodule Wingman.MixProject do
       {:jason, ">= 1.0.0"},
       {:hackney, "~> 1.17"},
       {:websockex, "~> 0.4"},
+      {:nadia, "~> 0.7.0"}
     ]
   end
 end
