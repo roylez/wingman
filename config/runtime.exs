@@ -5,7 +5,7 @@ config :wingman, :mattermost,
   token:   System.get_env("MATTERMOST_TOKEN")
 
 config :wingman,
-  webhook: System.get_env("WINGMAN_WEBHOOK") |> String.strip(),
+  webhook: System.get_env("WINGMAN_WEBHOOK") |> String.trim(),
   highlights: System.get_env("WINGMAN_HIGHLIGHTS"),
   debug: System.get_env("WINGMAN_DEBUG") == "1"
 
