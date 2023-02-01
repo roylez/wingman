@@ -19,6 +19,7 @@ config :logger, :console,
 
 if trim_get("WINGMAN_ENABLE_AT") do
   config :wingman, Wingman.Cron,
+    timezone: trim_get("TZ") || "UTC",
     jobs: [
       {trim_get("WINGMAN_ENABLE_AT"), {Wingman.Handler, :on, []}},
       {trim_get("WINGMAN_DISABLE_AT"), {Wingman.Handler, :off, []}}

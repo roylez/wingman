@@ -6,3 +6,5 @@ config :logger, :console,
 config :tesla, adapter: Tesla.Adapter.Hackney
 
 config :wingman, env: Config.config_env()
+
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
