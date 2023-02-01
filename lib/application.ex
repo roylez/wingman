@@ -12,6 +12,7 @@ defmodule Wingman.Application do
       Wingman.Mattermost,
       Wingman.Handler,
       Wingman.TelegramBot,
+      Wingman.Cache,
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

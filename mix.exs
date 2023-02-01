@@ -35,6 +35,7 @@ defmodule Wingman.MixProject do
       {:jason, ">= 1.0.0"},
       {:hackney, "~> 1.17"},
       {:websockex, "~> 0.4"},
+      {:cachex, "~> 3.5"},
       {:nadia, "~> 0.7.0"}
     ]
   end

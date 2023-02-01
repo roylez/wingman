@@ -3,6 +3,7 @@ defmodule Wingman.TelegramBot do
 
   require Logger
   alias Nadia.Model.{ Chat }
+  alias Wingman.Cache
 
   defstruct chat_id: nil, offset: nil
   
@@ -20,8 +21,8 @@ defmodule Wingman.TelegramBot do
     { :ok, %__MODULE__{ chat_id: chat_id } }
   end
 
-  def send(text) do
-    GenServer.cast(__MODULE__, {:send, text})
+  def send(origin, text) do
+    GenServer.cast(__MODULE__, {:send, origin, text})
   end
 
   def handle_info(:update, %{ offset: offset, chat_id: chat_id }=state) do
@@ -39,12 +40,16 @@ defmodule Wingman.TelegramBot do
     { :noreply, %{ state | offset: offset } }
   end
 
-  def handle_cast({:send, text}, state) do
-    with {:error, %{ reason: reason }} <- Nadia.send_message(state.chat_id, text, parse_mode: "Markdown") do
-      Logger.warn "Telegram send error: #{reason}"
-      Logger.warn "Original message: #{text}"
-      Nadia.send_message(state.chat_id, text)
-    end
+  def handle_cast({:send, origin, text}, state) do
+    {:ok, %{ message_id: tg_msg_id }} = 
+      case Nadia.send_message(state.chat_id, text) do
+        {:error, %{ reason: reason }} ->
+          Logger.warn "Telegram send error: #{reason}"
+          Logger.warn "Original message: #{text}"
+          Nadia.send_message(state.chat_id, text)
+        {:ok, res} -> {:ok, res}
+      end
+    Cache.set(tg_msg_id, origin)
     { :noreply, state }
   end
 

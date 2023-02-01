@@ -4,6 +4,7 @@ defmodule Wingman.Handler do
   use GenServer
 
   alias Wingman.Mattermost, as: MM
+  alias Wingman.Cache
   alias Nadia.Model, as: TG
 
   defstruct [
@@ -40,20 +41,31 @@ defmodule Wingman.Handler do
   def handle_cast(%MM.EventData{}=msg, %{ me: me }=state) do
     Logger.debug inspect(msg, pretty: true)
     case msg do
-      %{ sender_name: "@" <> ^me, post: %{ message: text, chann_id: chan } } ->
+      %{ 
+        sender_name: "@" <> ^me,
+        post: %{ message: _text }=post
+      } ->  # direct message from myself
         if Application.get_env(:wingman, :env) == :dev do
-          _send_message(state, "ME: #{text}")
-          {:noreply, %{ state| last_channel: chan }}
+          _send_message(state, post, "ME: #{post.message}")
+          {:noreply, %{ state| last_channel: post.channel_id }}
         else
           {:noreply, state}
         end
-      %{ channel_type: "D", sender_name: name, post: %{ message: text, channel_id: chan } } ->
-        _send_message(state, "#{name}: #{text}")
-        {:noreply, %{ state| last_channel: chan }}
-      %{ channel_name: chan_name, sender_name: name, post: %{ message: text, channel_id: chan } } ->
+      %{
+        channel_type: "D",
+        sender_name: name,
+        post: %{ message: _text }=post
+      } ->   # direct message
+        _send_message(state, post, "#{name}: #{post.message}")
+        {:noreply, %{ state| last_channel: post.channel_id }}
+      %{
+        channel_name: chan_name,
+        sender_name: name,
+        post: %{ message: text }=post
+      } ->   # channel message
         if String.match?(text, state.highlights) do
-          _send_message(state, "[#{chan_name}] #{name}: #{text}")
-          {:noreply, %{ state| last_channel: chan }}
+          _send_message(state, post, "[#{chan_name}] #{name}: #{post.message}")
+          {:noreply, %{ state| last_channel: post.channel_id }}
         else
           {:noreply, state}
         end
@@ -61,20 +73,32 @@ defmodule Wingman.Handler do
     end
   end
   # telegram in
-  def handle_cast(%TG.Message{ text: text }, state) do
-    Logger.info "TELEGRAM -> #{state.last_channel}: #{text}"
-    MM.post_create(%{ channel: state.last_channel, message: text })
+  def handle_cast(%TG.Message{ text: text, reply_to_message: reply_to_message }, state) do
+    {:ok, origin} = (reply_to_message || %{})
+                    |> Map.get(:message_id)
+                    |> Cache.get()
+    channel_id = Map.get(origin || %{}, :channel_id) || state.last_channel
+    reply_to = Map.get(origin || %{}, :id)
+    case MM.post_create(
+      %{ channel_id: channel_id, reply_to: reply_to, message: text }
+    ) do
+      {:ok, _, _msg} ->
+        Logger.info "<- TELEGRAM #{channel_id}: #{text}"
+      {:error, _, msg} ->
+        Logger.warn "<x TELEGRAM #{channel_id}: #{text}"
+        Logger.warn inspect(msg)
+    end
     {:noreply, state}
   end
   def handle_cast(_, state), do: {:noreply, state}
 
-  defp _send_message(%{ webhook: webhook, telegram: telegram }, data) do
-    Logger.info "MATTERMOST: #{data}"
+  defp _send_message(%{ webhook: webhook, telegram: telegram }, origin, text) do
+    Logger.info "MATTERMOST -> #{text}"
     if telegram do
-      _send_telegram(data)
+      _send_telegram(origin, text)
     end
     if webhook do
-      _send_webhook(webhook, data)
+      _send_webhook(webhook, text)
     end
   end
 
@@ -83,15 +107,15 @@ defmodule Wingman.Handler do
     task = Task.async( fn -> :hackney.post(hook, header, data) end)
     case Task.await(task) do
       {:ok, 200, _, _} ->
-        Logger.info "WEBHOOK sent: response 200"
+        Logger.info "-> WEBHOOK : response 200"
       {_, status, _, _}=resp ->
-        Logger.warn "WEBHOOK failed: response #{status}"
+        Logger.warn "x> WEBHOOK : response #{status}"
         Logger.warn inspect(resp)
     end
   end
 
-  defp _send_telegram(data) do
-    Wingman.TelegramBot.send(data)
+  defp _send_telegram(origin, data) do
+    Wingman.TelegramBot.send(origin, data)
   end
 
 end
