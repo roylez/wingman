@@ -16,3 +16,12 @@ config :wingman,
 
 config :logger, :console,
   level: trim_get("WINGMAN_DEBUG") == "1" && :debug || :info
+
+if trim_get("WINGMAN_ENABLE_AT") do
+  config :wingman, Wingman.Cron,
+    jobs: [
+      {trim_get("WINGMAN_ENABLE_AT"), {Wingman.Handler, :on, []}},
+      {trim_get("WINGMAN_DISABLE_AT"), {Wingman.Handler, :off, []}}
+    ]
+
+end

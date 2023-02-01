@@ -36,6 +36,7 @@ defmodule Wingman.MixProject do
       {:hackney, "~> 1.17"},
       {:websockex, "~> 0.4"},
       {:cachex, "~> 3.5"},
+      {:quantum, "~> 3.0"},
       {:telegram, github: "visciang/telegram", tag: "0.22.4"}
     ]
   end
