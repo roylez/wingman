@@ -7,6 +7,11 @@ defmodule Wingman.TelegramBot do
 
   defstruct chat_id: nil, offset: nil
   
+  @commands [
+    %{command: "on", description: "Enable Message Forwarding"},
+    %{command: "off", description: "Disable Message Forwarding"}
+  ]
+  
   def start_link(state) do
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
@@ -18,11 +23,15 @@ defmodule Wingman.TelegramBot do
     {:ok, chat} = TG.request(:get_chat, chat_id: chat_id)
     Logger.info "Telegram Bot: #{bot.first_name} ( #{bot.username} )"
     Logger.info "Telegram Chat: #{chat.username} ( #{chat.id} )"
+    TG.request(:set_my_commands, commands: @commands)
     { :ok, %__MODULE__{ chat_id: chat_id } }
   end
 
   def send(origin, text) do
     GenServer.cast(__MODULE__, {:send, origin, text})
+  end
+  def send(text) do
+    GenServer.cast(__MODULE__, {:send, text})
   end
 
   def handle_info(:update, %{ offset: offset, chat_id: chat_id }=state) do
@@ -40,6 +49,10 @@ defmodule Wingman.TelegramBot do
     { :noreply, %{ state | offset: offset } }
   end
 
+  def handle_cast({:send, text}, state) do
+    TG.request(:send_message, chat_id: state.chat_id, text: text, parse_mode: "Markdown")
+    {:noreply, state}
+  end
   def handle_cast({:send, origin, text}, state) do
     {:ok, %{ message_id: tg_msg_id }} = 
       case TG.request(:send_message, chat_id: state.chat_id, text: text, parse_mode: "Markdown") do

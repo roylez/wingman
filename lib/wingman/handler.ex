@@ -4,16 +4,17 @@ defmodule Wingman.Handler do
   use GenServer
 
   alias Wingman.Mattermost, as: MM
-  alias Wingman.Cache
+  alias Wingman.{ Cache, TelegramBot }
 
   defstruct [
     highlights: nil,
     webhook: nil,
     telegram: nil,
     last_channel: nil,
+    forward_override: nil,
     me: nil,
   ]
-  
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
@@ -35,55 +36,79 @@ defmodule Wingman.Handler do
   def handle(msg) do
     GenServer.cast(__MODULE__, msg)
   end
+
+  def on, do: GenServer.cast(__MODULE__, :on)
+
+  def off, do: GenServer.cast(__MODULE__, :off)
   
   # mattermost in
   def handle_cast(%MM.EventData{}=msg, %{ me: me }=state) do
     Logger.debug inspect(msg, pretty: true)
-    case msg do
-      %{ 
-        sender_name: "@" <> ^me,
-        post: %{ message: _text }=post
-      } ->  # direct message from myself
-        if Application.get_env(:wingman, :env) == :dev do
-          _send_message(state, post, "ME: #{post.message}")
+    if _forward_enabled?(state) do
+      case msg do
+        %{ 
+          sender_name: "@" <> ^me,
+          post: %{ message: _text }=post
+        } ->  # direct message from myself
+          if Application.get_env(:wingman, :env) == :dev do
+            _send_message(state, post, "ME: #{post.message}")
+            {:noreply, %{ state| last_channel: post.channel_id }}
+          else
+            {:noreply, state}
+          end
+        %{
+          channel_type: "D",
+          sender_name: name,
+          post: %{ message: _text }=post
+        } ->   # direct message
+          _send_message(state, post, "#{name}: #{post.message}")
           {:noreply, %{ state| last_channel: post.channel_id }}
-        else
-          {:noreply, state}
-        end
-      %{
-        channel_type: "D",
-        sender_name: name,
-        post: %{ message: _text }=post
-      } ->   # direct message
-        _send_message(state, post, "#{name}: #{post.message}")
-        {:noreply, %{ state| last_channel: post.channel_id }}
-      %{
-        channel_name: chan_name,
-        sender_name: name,
-        post: %{ message: text }=post
-      } ->   # channel message
-        if String.match?(text, state.highlights) do
-          _send_message(state, post, "[#{chan_name}] #{name}: #{post.message}")
-          {:noreply, %{ state| last_channel: post.channel_id }}
-        else
-          {:noreply, state}
-        end
-      _ -> {:noreply, state}
+        %{
+          channel_name: chan_name,
+          sender_name: name,
+          post: %{ message: text }=post
+        } ->   # channel message
+          if String.match?(text, state.highlights) do
+            _send_message(state, post, "[#{chan_name}] #{name}: #{post.message}")
+            {:noreply, %{ state| last_channel: post.channel_id }}
+          else
+            {:noreply, state}
+          end
+        _ -> {:noreply, state}
+      end
+    else
+      {:noreply, state}
     end
   end
   # telegram in
+  def handle_cast(%{ text: "/on" }, state) do
+    TelegramBot.send("🙉 Message forwarding from Mattermost is on!")
+    { :noreply, %{ state| forward_override: true } }
+  end
+  def handle_cast(%{ text: "/off" }, state) do
+    TelegramBot.send("🙈 Message forwarding from Mattermost is off!")
+    { :noreply, %{ state| forward_override: false } }
+  end
+  def handle_cast(:on, state) do
+    { :noreply, %{ state| forward_override: true } }
+  end
+  def handle_cast(:off, state) do
+    { :noreply, %{ state| forward_override: false } }
+  end
   def handle_cast(%{ text: text }=msg, state) do
-    {:ok, origin} = get_in(msg, [:reply_to_message, :message_id]) |> Cache.get()
-    channel_id = Map.get(origin || %{}, :channel_id) || state.last_channel
-    reply_to = Map.get(origin || %{}, :id)
-    case MM.post_create(
-      %{ channel_id: channel_id, reply_to: reply_to, message: text }
-    ) do
-      {:ok, _, _msg} ->
-        Logger.info "<- TELEGRAM #{channel_id}: #{text}"
-      {:error, _, msg} ->
-        Logger.warn "<x TELEGRAM #{channel_id}: #{text}"
-        Logger.warn inspect(msg)
+    if _forward_enabled?(state) do
+      {:ok, origin} = get_in(msg, [:reply_to_message, :message_id]) |> Cache.get()
+      channel_id = Map.get(origin || %{}, :channel_id) || state.last_channel
+      reply_to = Map.get(origin || %{}, :id)
+      case MM.post_create(
+        %{ channel_id: channel_id, reply_to: reply_to, message: text }
+      ) do
+        {:ok, _, _msg} ->
+          Logger.info "<- TELEGRAM #{channel_id}: #{text}"
+        {:error, _, msg} ->
+          Logger.warn "<x TELEGRAM #{channel_id}: #{text}"
+          Logger.warn inspect(msg)
+      end
     end
     {:noreply, state}
   end
@@ -115,7 +140,11 @@ defmodule Wingman.Handler do
   end
 
   defp _send_telegram(origin, data) do
-    Wingman.TelegramBot.send(origin, data)
+    TelegramBot.send(origin, data)
   end
+
+  defp _forward_enabled?(%{ forward_override: true }),  do: true
+  defp _forward_enabled?(%{ forward_override: false }), do: false
+  defp _forward_enabled?(_), do: true
 
 end
