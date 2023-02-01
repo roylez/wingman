@@ -31,9 +31,13 @@ _build/prod/rel/wingman/bin/wingman start
 ## Environment Variables
 
 ```
-MATTERMOST_TOKEN:    # Profile -> Security -> Personal Access Token
-MATTERMOST_API_URL:  # Custom API endpoint
-WINGMAN_HIGHLIHGHTS: # only messages matching highlights are forwarded, regex allowed.
-WINGMAN_WEBHOOK:     # optional, if messages are to be sent to a webhook address
-WINGMAN_DEBUG:       # optional set to 1 for debugging
+MATTERMOST_TOKEN:         # Profile -> Security -> Personal Access Token
+MATTERMOST_API_URL:       # Custom API endpoint
+WINGMAN_HIGHLIHGHTS:      # only messages matching highlights are forwarded, regex allowed.
+WINGMAN_WEBHOOK:          # optional, if messages are to be sent to a webhook address
+WINGMAN_DEBUG:            # optional set to 1 for debugging
+WINGMAN_TELEGRAM_TOKEN:   # optional, only if telegram bot is used
+WINGMAN_TELEGRAM_CHAT_ID: # optional, only if telegram bot is used
+WINGMAN_ENABLE_AT:        # optional, cron expression
+WINGMAN_DISABLE_AT:       # optional, cron expression
 ```
