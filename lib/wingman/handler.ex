@@ -5,7 +5,6 @@ defmodule Wingman.Handler do
 
   alias Wingman.Mattermost, as: MM
   alias Wingman.Cache
-  alias Nadia.Model, as: TG
 
   defstruct [
     highlights: nil,
@@ -21,7 +20,7 @@ defmodule Wingman.Handler do
   
   def init(_) do
     webhook = Application.get_env(:wingman, :webhook)
-    telegram = Application.get_env(:wingman, :telegram_chat_id) && Application.get_env(:nadia, :token)
+    telegram = Application.get_env(:wingman, :telegram)
     highlights = ~r(#{Application.get_env(:wingman, :highlights)})iu
     me = MM.me()
     Logger.info "USER ID: #{me}"
@@ -73,10 +72,8 @@ defmodule Wingman.Handler do
     end
   end
   # telegram in
-  def handle_cast(%TG.Message{ text: text, reply_to_message: reply_to_message }, state) do
-    {:ok, origin} = (reply_to_message || %{})
-                    |> Map.get(:message_id)
-                    |> Cache.get()
+  def handle_cast(%{ text: text }=msg, state) do
+    {:ok, origin} = get_in(msg, [:reply_to_message, :message_id]) |> Cache.get()
     channel_id = Map.get(origin || %{}, :channel_id) || state.last_channel
     reply_to = Map.get(origin || %{}, :id)
     case MM.post_create(
@@ -90,7 +87,10 @@ defmodule Wingman.Handler do
     end
     {:noreply, state}
   end
-  def handle_cast(_, state), do: {:noreply, state}
+  def handle_cast(stuff, state) do
+    Logger.debug inspect(stuff)
+    {:noreply, state}
+  end
 
   defp _send_message(%{ webhook: webhook, telegram: telegram }, origin, text) do
     Logger.info "MATTERMOST -> #{text}"
