@@ -8,6 +8,7 @@ defmodule Wingman.Handler do
 
   defstruct [
     highlights: nil,
+    channels: nil,
     webhook: nil,
     telegram: nil,
     last_channel: nil,
@@ -20,15 +21,15 @@ defmodule Wingman.Handler do
   end
   
   def init(_) do
-    webhook = Application.get_env(:wingman, :webhook)
-    telegram = Application.get_env(:wingman, :telegram)
-    highlights = ~r(#{Application.get_env(:wingman, :highlights)})iu
+    channels = Application.get_env(:wingman, :channels)
     me = MM.me()
     Logger.info "USER ID: #{me}"
+    Logger.info "MATTERMOST CHANNELS: #{inspect channels}"
     { :ok, %__MODULE__{
-      webhook: webhook,
-      highlights: highlights,
-      telegram: telegram,
+      webhook:    Application.get_env(:wingman, :webhook),
+      highlights: ~r(#{Application.get_env(:wingman, :highlights)})iu,
+      telegram:   Application.get_env(:wingman, :telegram),
+      channels:   channels,
       me: me,
     } }
   end
@@ -67,11 +68,17 @@ defmodule Wingman.Handler do
         sender_name: name,
         post: %{ message: text }=post
       } ->   # channel message
-        if String.match?(text, state.highlights) do
-          _send_message(state, post, "[#{chan_name}] #{name}: #{post.message}")
-          {:noreply, %{ state| last_channel: post.channel_id }}
-        else
-          {:noreply, state}
+        cond do
+          # highlights, always deliver with notification
+          String.match?(text, state.highlights) ->
+            _send_message(state, post, "[#{chan_name}] #{name}: #{post.message}")
+            {:noreply, %{ state| last_channel: post.channel_id }}
+          # permitted channel messages, deliver in silence
+          chan_name in state.channels ->
+            _send_message(state, post, "[#{chan_name}] #{name}: #{post.message}", false)
+            {:noreply, %{ state| last_channel: post.channel_id }}
+          true ->
+            {:noreply, state}
         end
       _ -> {:noreply, state}
     end
@@ -116,10 +123,10 @@ defmodule Wingman.Handler do
     {:noreply, state}
   end
 
-  defp _send_message(%{ webhook: webhook, telegram: telegram }, origin, text) do
+  defp _send_message(%{ webhook: webhook, telegram: telegram }, origin, text, notify \\ true) do
     Logger.info "MATTERMOST -> #{text}"
     if telegram do
-      _send_telegram(origin, text)
+      _send_telegram(origin, text, notify)
     end
     if webhook do
       _send_webhook(webhook, text)
@@ -138,8 +145,11 @@ defmodule Wingman.Handler do
     end
   end
 
-  defp _send_telegram(origin, data) do
-    TelegramBot.send(origin, data)
+  defp _send_telegram(origin, data, notify) do
+    case notify do
+      true -> TelegramBot.send(origin, data)
+      false -> TelegramBot.send(origin, data, disable_notification: true)
+    end
   end
 
 end

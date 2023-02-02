@@ -27,8 +27,8 @@ defmodule Wingman.TelegramBot do
     { :ok, %__MODULE__{ chat_id: chat_id } }
   end
 
-  def send(origin, text) do
-    GenServer.cast(__MODULE__, {:send, origin, text})
+  def send(origin, text, opts \\ []) do
+    GenServer.cast(__MODULE__, {:send, origin, text, opts})
   end
   def send(text) do
     GenServer.cast(__MODULE__, {:send, text})
@@ -53,9 +53,9 @@ defmodule Wingman.TelegramBot do
     TG.request(:send_message, chat_id: state.chat_id, text: text, parse_mode: "Markdown")
     {:noreply, state}
   end
-  def handle_cast({:send, origin, text}, state) do
+  def handle_cast({:send, origin, text, opts}, state) do
     {:ok, %{ message_id: tg_msg_id }} = 
-      case TG.request(:send_message, chat_id: state.chat_id, text: text, parse_mode: "Markdown") do
+      case TG.request(:send_message, [chat_id: state.chat_id, text: text, parse_mode: "Markdown"] ++ opts) do
         {:error, %{ reason: reason }} ->
           Logger.warn "Telegram send error: #{reason}"
           Logger.warn "Original message: #{text}"

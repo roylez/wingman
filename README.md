@@ -18,6 +18,7 @@ services:
       WINGMAN_MATTERMOST_URL: https://mattermost.com
       WINGMAN_WEBHOOK:  https://example.com/webhook
       WINGMAN_HIGHLIHGHTS:  hello|world
+      WINGMAN_CHANNELS: channel1,channel2
 ```
 
 ### Manual
@@ -35,6 +36,7 @@ TZ:                       # timezone, default to UTC
 WINGMAN_MATTERMOST_TOKEN: # Profile -> Security -> Personal Access Token
 WINGMAN_MATTERMOST_URL:   # Custom API endpoint
 WINGMAN_HIGHLIHGHTS:      # only messages matching highlights are forwarded, regex allowed.
+WINGMAN_CHANNELS:         # optional, list of channels that all messge will be forwarded without notification
 WINGMAN_WEBHOOK:          # optional, if messages are to be sent to a webhook address
 WINGMAN_DEBUG:            # optional set to 1 for debugging
 WINGMAN_TELEGRAM_TOKEN:   # optional, only if telegram bot is used

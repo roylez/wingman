@@ -1,7 +1,7 @@
 defmodule Common.Util do
-  def trim_get(var), do: trim_get(var, :string)
+  def env_get(var), do: env_get(var, :string)
 
-  def trim_get(var, :string) do
+  def env_get(var, :string) do
     with str when is_binary(str) <- System.get_env(var),
          res when byte_size(res) > 0 <- String.trim(str)
     do
@@ -11,14 +11,18 @@ defmodule Common.Util do
     end
   end
 
-  def trim_get(var, :integer) do
-    with str when is_binary(str) <- trim_get(var),
+  def env_get(var, :integer) do
+    with str when is_binary(str) <- env_get(var),
          {int, _} <- Integer.parse(str)
     do
       int
     else
       _ -> nil
     end
+  end
+
+  def env_get(var, :list) do
+    String.split(var, ",") |> Enum.reject(&(byte_size(&1)==0))
   end
 
   def keys_to_atoms(json), do: keys_to_atoms(json, false)
