@@ -43,44 +43,31 @@ defmodule Wingman.Handler do
   def off, do: GenServer.cast(__MODULE__, :off)
   
   # mattermost in
-  def handle_cast(%MM.EventData{}=msg, %{ me: me, enabled: true }=state) do
+  def handle_cast(%MM.EventData{}=msg, %{ enabled: true }=state) do
     Logger.debug inspect(msg, pretty: true)
-    case msg do
-      %{ 
-        sender_name: "@" <> ^me,
-        post: %{ message: _text }=post
-      } ->  # direct message from myself
-        if Application.get_env(:wingman, :env) == :dev do
+    with %{ sender_name: sender, post: %{ message: _ }=post, channel_type: type, channel_name: chan } <- msg
+    do
+      cond do
+        # myself
+        "@#{state.me}"==sender and Application.get_env(:wingman, :env) == :dev -> 
           _send_message(state, post, "ME: #{post.message}")
           {:noreply, %{ state| last_channel: post.channel_id }}
-        else
-          {:noreply, state}
-        end
-      %{
-        channel_type: "D",
-        sender_name: name,
-        post: %{ message: _text }=post
-      } ->   # direct message
-        _send_message(state, post, "#{name}: #{post.message}")
-        {:noreply, %{ state| last_channel: post.channel_id }}
-      %{
-        channel_name: chan_name,
-        sender_name: name,
-        post: %{ message: text }=post
-      } ->   # channel message
-        cond do
-          # highlights, always deliver with notification
-          String.match?(text, state.highlights) ->
-            _send_message(state, post, "[#{chan_name}] #{name}: #{post.message}")
-            {:noreply, %{ state| last_channel: post.channel_id }}
-          # permitted channel messages, deliver in silence
-          chan_name in state.channels ->
-            _send_message(state, post, "[#{chan_name}] #{name}: #{post.message}", false)
-            {:noreply, %{ state| last_channel: post.channel_id }}
-          true ->
-            {:noreply, state}
-        end
-      _ -> {:noreply, state}
+        # direct message
+        type == "D" ->
+          _send_message(state, post, " @#{sender}: #{post.message}")
+          {:noreply, %{ state| last_channel: post.channel_id }}
+        # highlights
+        String.match?(post.message, state.highlights) ->
+          _send_message(state, post, " ⚠️⚠*#{chan}* - #{sender}: #{post.message}")
+          {:noreply, %{ state| last_channel: post.channel_id }}
+        # permitted channel messages, deliver in silence
+        chan in state.channels ->
+          _send_message(state, post, " *#{chan}* - #{sender}: #{post.message}", false)
+          {:noreply, %{ state| last_channel: post.channel_id }}
+        true -> { :noreply, state }
+      end
+    else
+      _ -> { :noreply, state }
     end
   end
   # telegram in
