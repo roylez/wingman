@@ -2,8 +2,8 @@ import Config
 import Common.Util
 
 config :wingman, :mattermost,
-  api_url: URI.merge(trim_get("MATTERMOST_API_URL"), "/api/v4") |> URI.to_string(),
-  token:   trim_get("MATTERMOST_TOKEN")
+  api_url: URI.merge(trim_get("WINGMAN_MATTERMOST_URL"), "/api/v4") |> URI.to_string(),
+  token:   trim_get("WINGMAN_MATTERMOST_TOKEN")
 
 config :wingman,
   webhook: trim_get("WINGMAN_WEBHOOK"),
