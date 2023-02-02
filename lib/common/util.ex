@@ -22,7 +22,10 @@ defmodule Common.Util do
   end
 
   def env_get(var, :list) do
-    String.split(var, ",") |> Enum.reject(&(byte_size(&1)==0))
+    var
+    |> System.get_env(var)
+    |> String.split(",")
+    |> Enum.reject(&(byte_size(&1)==0))
   end
 
   def keys_to_atoms(json), do: keys_to_atoms(json, false)

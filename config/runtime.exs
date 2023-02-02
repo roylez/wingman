@@ -9,7 +9,7 @@ config :wingman,
   webhook: env_get("WINGMAN_WEBHOOK"),
   highlights: env_get("WINGMAN_HIGHLIGHTS"),
   debug: env_get("WINGMAN_DEBUG") == "1",
-  channels: env_get("WINGMAN_CHANNELS"),
+  channels: env_get("WINGMAN_CHANNELS", :list),
   telegram: {
     env_get("WINGMAN_TELEGRAM_TOKEN"),
     env_get("WINGMAN_TELEGRAM_CHAT_ID", :integer)
