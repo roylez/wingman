@@ -113,6 +113,7 @@ defmodule Wingman.Handler do
   defp _send_message(%{ webhook: webhook, telegram: telegram }, origin, text, notify \\ true) do
     Logger.info "MATTERMOST -> #{text}"
     if telegram do
+      text = String.replace(text, "**", "*")
       _send_telegram(origin, text, notify)
     end
     if webhook do
