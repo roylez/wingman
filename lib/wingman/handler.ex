@@ -79,20 +79,20 @@ defmodule Wingman.Handler do
   # telegram in
   def handle_cast(%{ text: "/on" }, %{ enabled: false }=state) do
     TelegramBot.send("🙉 Message forwarding from Mattermost is set to **ON**!")
-    { :noreply, %{ state| enabled: true }, { :continue, :set_commands } }
+    { :noreply, %{ state| enabled: true } }
   end
   def handle_cast(%{ text: "/off" }, %{ enabled: true }=state) do
     TelegramBot.send("🙈 Message forwarding from Mattermost is set to **OFF**!")
-    { :noreply, %{ state| enabled: false }, { :continue, :set_commands } }
+    { :noreply, %{ state| enabled: false } }
   end
   def handle_cast(%{ text: "/" <> _ }, state), do: { :noreply, state }
   def handle_cast(:on, state) do
     TelegramBot.send("🕘 Message forwarding from Mattermost is set to **ON**!")
-    { :noreply, %{ state| enabled: true }, { :continue, :set_commands } }
+    { :noreply, %{ state| enabled: true } }
   end
   def handle_cast(:off, state) do
     TelegramBot.send("🕕 Message forwarding from Mattermost is set to **OFF**!")
-    { :noreply, %{ state| enabled: false }, { :continue, :set_commands } }
+    { :noreply, %{ state| enabled: false } }
   end
   def handle_cast(%{ text: _text }, %{ enable: false }=state) do
     {:noreply, state}
@@ -117,13 +117,8 @@ defmodule Wingman.Handler do
     {:noreply, state}
   end
 
-  def handle_continue(:set_commands, %{ enabled: enabled }=state) do
-    excludes = case enabled do
-      true -> [:on]
-      false -> [:off]
-    end
+  def handle_continue(:set_commands, state) do
     @bot_commands
-    |> Enum.reject( fn {k, _} -> k in excludes end)
     |> Enum.map(fn {k, v} -> %{ command: k, description: v } end)
     |> then(&(TG.request(:set_my_commands, commands: &1)))
     {:noreply, state}
