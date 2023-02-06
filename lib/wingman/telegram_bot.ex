@@ -7,11 +7,6 @@ defmodule Wingman.TelegramBot do
 
   defstruct chat_id: nil, offset: nil
   
-  @commands [
-    %{command: "on", description: "Enable Message Forwarding"},
-    %{command: "off", description: "Disable Message Forwarding"}
-  ]
-  
   def start_link(state) do
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
@@ -23,7 +18,6 @@ defmodule Wingman.TelegramBot do
     {:ok, chat} = TG.request(:get_chat, chat_id: chat_id)
     Logger.info "Telegram Bot: #{bot.first_name} ( #{bot.username} )"
     Logger.info "Telegram Chat: #{chat.username} ( #{chat.id} )"
-    TG.request(:set_my_commands, commands: @commands)
     { :ok, %__MODULE__{ chat_id: chat_id } }
   end
 

@@ -4,8 +4,14 @@ defmodule Wingman.Handler do
   use GenServer
 
   alias Wingman.Mattermost, as: MM
+  alias Wingman.Telegram, as: TG
   alias Wingman.{ Cache, TelegramBot }
 
+  @bot_commands [
+    on: "Enable Forwarding",
+    off: "Disable Forwarding"
+  ]
+  
   defstruct [
     highlights: nil,
     channels: nil,
@@ -31,7 +37,7 @@ defmodule Wingman.Handler do
       telegram:   Application.get_env(:wingman, :telegram),
       channels:   channels,
       me: me,
-    } }
+    }, { :continue, :set_commands } }
   end
 
   def handle(msg) do
@@ -71,21 +77,22 @@ defmodule Wingman.Handler do
     end
   end
   # telegram in
-  def handle_cast(%{ text: "/on" }, state) do
+  def handle_cast(%{ text: "/on" }, %{ enabled: false }=state) do
     TelegramBot.send("🙉 Message forwarding from Mattermost is set to **ON**!")
-    { :noreply, %{ state| enabled: true } }
+    { :noreply, %{ state| enabled: true }, { :continue, :set_commands } }
   end
-  def handle_cast(%{ text: "/off" }, state) do
+  def handle_cast(%{ text: "/off" }, %{ enabled: true }=state) do
     TelegramBot.send("🙈 Message forwarding from Mattermost is set to **OFF**!")
-    { :noreply, %{ state| enabled: false } }
+    { :noreply, %{ state| enabled: false }, { :continue, :set_commands } }
   end
+  def handle_cast(%{ text: "/" <> _ }, state), do: { :noreply, state }
   def handle_cast(:on, state) do
     TelegramBot.send("🕘 Message forwarding from Mattermost is set to **ON**!")
-    { :noreply, %{ state| enabled: true } }
+    { :noreply, %{ state| enabled: true }, { :continue, :set_commands } }
   end
   def handle_cast(:off, state) do
     TelegramBot.send("🕕 Message forwarding from Mattermost is set to **OFF**!")
-    { :noreply, %{ state| enabled: false } }
+    { :noreply, %{ state| enabled: false }, { :continue, :set_commands } }
   end
   def handle_cast(%{ text: _text }, %{ enable: false }=state) do
     {:noreply, state}
@@ -107,6 +114,18 @@ defmodule Wingman.Handler do
   end
   def handle_cast(stuff, state) do
     Logger.debug inspect(stuff)
+    {:noreply, state}
+  end
+
+  def handle_continue(:set_commands, %{ enabled: enabled }=state) do
+    excludes = case enabled do
+      true -> [:on]
+      false -> [:off]
+    end
+    @bot_commands
+    |> Enum.reject( fn {k, _} -> k in excludes end)
+    |> Enum.map(fn {k, v} -> %{ command: k, description: v } end)
+    |> then(&(TG.request(:set_my_commands, commands: &1)))
     {:noreply, state}
   end
 
