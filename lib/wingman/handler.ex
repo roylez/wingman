@@ -94,10 +94,10 @@ defmodule Wingman.Handler do
     TelegramBot.send("🕕 Message forwarding from Mattermost is set to **OFF**!")
     { :noreply, %{ state| enabled: false } }
   end
-  def handle_cast(%{ text: _text }, %{ enable: false }=state) do
+  def handle_cast(%{ text: _text }, %{ enabled: false }=state) do
     {:noreply, state}
   end
-  def handle_cast(%{ text: text }=msg, %{ enable: true }=state) do
+  def handle_cast(%{ text: text }=msg, %{ enabled: true }=state) do
     {:ok, origin} = get_in(msg, [:reply_to_message, :message_id]) |> Cache.get()
     channel_id = Map.get(origin || %{}, :channel_id) || state.last_channel
     reply_to = Map.get(origin || %{}, :id)
