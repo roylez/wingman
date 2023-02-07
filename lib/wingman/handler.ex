@@ -60,7 +60,7 @@ defmodule Wingman.Handler do
           {:noreply, %{ state| last_channel: post.channel_id }}
         # direct message
         type == "D" ->
-          _send_message(state, post, "🗣 @#{sender}: #{post.message}")
+          _send_message(state, post, "🗣 #{sender}: #{post.message}")
           {:noreply, %{ state| last_channel: post.channel_id }}
         # highlights
         String.match?(post.message, state.highlights) ->
