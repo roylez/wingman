@@ -54,10 +54,13 @@ defmodule Wingman.Handler do
     with %{ sender_name: sender, post: %{ message: _ }=post, channel_type: type, channel_name: chan } <- msg
     do
       cond do
-        # myself
+        # myself in dev
         "@#{state.me}"==sender and Application.get_env(:wingman, :env) == :dev -> 
           _send_message(state, post, "ME: #{post.message}")
           {:noreply, %{ state| last_channel: post.channel_id }}
+        # myself in non-dev
+        "@#{state.me}"==sender ->
+          {:noreply, state}
         # direct message
         type == "D" ->
           _send_message(state, post, "🗣 #{sender}: #{post.message}")
