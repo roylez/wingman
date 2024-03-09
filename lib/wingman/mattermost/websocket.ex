@@ -51,23 +51,25 @@ defmodule Wingman.Mattermost.Websocket do
 
   def handle_event(%{ event: e, seq: seq }, _state)
   when e in ~w(
-    typing
-    user_updated
-    user_added
-    user_removed
-    post_edited
-    post_deleted
+    channel_updated
+    channel_viewed
+    direct_added
+    draft_created
     emoji_added
-    status_change
+    leave_team
     license_changed
+    new_user
+    post_deleted
+    post_edited
+    preferences_changed
     reaction_added
     reaction_removed
-    channel_viewed
-    preferences_changed
     sidebar_category_updated
-    direct_added
-    new_user
-    leave_team
+    status_change
+    typing
+    user_added
+    user_removed
+    user_updated
   )
   do
     { :ok, seq }
