@@ -58,6 +58,7 @@ defmodule Wingman.Mattermost.Websocket do
     emoji_added
     leave_team
     license_changed
+    multiple_channels_viewe
     new_user
     post_deleted
     post_edited
