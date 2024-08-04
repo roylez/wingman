@@ -6,11 +6,11 @@ defmodule Wingman.TelegramBot do
   alias Wingman.Telegram, as: TG
 
   defstruct chat_id: nil, offset: nil
-  
+
   def start_link(state) do
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
-  
+
   def init(_) do
     :timer.send_interval(2000, :update)
     {_, chat_id} = Application.get_env(:wingman, :telegram)
@@ -29,11 +29,12 @@ defmodule Wingman.TelegramBot do
   end
 
   def handle_info(:update, %{ offset: offset, chat_id: chat_id }=state) do
-    { :ok, updates } = TG.request(:get_updates, limit: 5, offset: offset)
-    for u <- updates do
-      with %{ message: %{ chat: %{ id: ^chat_id } }=m } <- u do
-        Logger.debug inspect(u, pretty: true)
-        Wingman.Handler.handle(m)
+    with { :ok, updates } <- TG.request(:get_updates, limit: 5, offset: offset) do
+      for u <- updates do
+        with %{ message: %{ chat: %{ id: ^chat_id } }=m } <- u do
+          Logger.debug inspect(u, pretty: true)
+          Wingman.Handler.handle(m)
+        end
       end
     end
     offset = case List.last(updates) do
@@ -48,7 +49,7 @@ defmodule Wingman.TelegramBot do
     {:noreply, state}
   end
   def handle_cast({:send, origin, text, opts}, state) do
-    {:ok, %{ message_id: tg_msg_id }} = 
+    {:ok, %{ message_id: tg_msg_id }} =
       case TG.request(:send_message, [chat_id: state.chat_id, text: text, parse_mode: "Markdown"] ++ opts) do
         {:error, %{ reason: reason }} ->
           Logger.warn "Telegram send error: #{reason}"
