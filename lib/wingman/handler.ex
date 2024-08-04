@@ -11,21 +11,21 @@ defmodule Wingman.Handler do
     on: "Enable Forwarding",
     off: "Disable Forwarding"
   ]
-  
+
   defstruct [
     highlights: nil,
     channels: nil,
     webhook: nil,
     telegram: nil,
     last_channel: nil,
-    enabled: true,
+    enabled: false,
     me: nil,
   ]
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
-  
+
   def init(_) do
     channels = Application.get_env(:wingman, :channels)
     me = MM.me()
@@ -47,7 +47,7 @@ defmodule Wingman.Handler do
   def on, do: GenServer.cast(__MODULE__, :on)
 
   def off, do: GenServer.cast(__MODULE__, :off)
-  
+
   # mattermost in
   def handle_cast(%MM.EventData{}=msg, %{ enabled: true }=state) do
     Logger.debug inspect(msg, pretty: true)
@@ -55,7 +55,7 @@ defmodule Wingman.Handler do
     do
       cond do
         # myself in dev
-        "@#{state.me}"==sender and Application.get_env(:wingman, :env) == :dev -> 
+        "@#{state.me}"==sender and Application.get_env(:wingman, :env) == :dev ->
           _send_message(state, post, "ME: #{post.message}")
           {:noreply, %{ state| last_channel: post.channel_id }}
         # myself in non-dev
