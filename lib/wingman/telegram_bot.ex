@@ -14,11 +14,16 @@ defmodule Wingman.TelegramBot do
   def init(_) do
     :timer.send_interval(2000, :update)
     {_, chat_id} = Application.get_env(:wingman, :telegram)
-    {:ok, bot} = TG.request(:get_me)
-    {:ok, chat} = TG.request(:get_chat, chat_id: chat_id)
-    Logger.info "Telegram Bot: #{bot.first_name} ( #{bot.username} )"
-    Logger.info "Telegram Chat: #{chat.username} ( #{chat.id} )"
-    { :ok, %__MODULE__{ chat_id: chat_id } }
+    with {:ok, bot} <- TG.request(:get_me),
+      {:ok, chat} <- TG.request(:get_chat, chat_id: chat_id)
+    do
+      Logger.info "Telegram Bot: #{bot.first_name} ( #{bot.username} )"
+      Logger.info "Telegram Chat: #{chat.username} ( #{chat.id} )"
+      { :ok, %__MODULE__{ chat_id: chat_id } }
+    else
+      {:error, reason} ->
+        Logger.warning "Failed to start Telegram Bot: #{inspect reason}"
+        {:stop, reason}
   end
 
   def send(origin, text, opts \\ []) do
