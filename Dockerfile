@@ -2,7 +2,7 @@ ARG ELIXIR=1.17.2
 ARG ERLANG=27.0.1
 ARG ALPINE=3.20.2
 
-FROM hexpm/elixir:${ELIXIR}-erlang-${ERLANG}-alpine-${ALPINE} as builder
+FROM hexpm/elixir:${ELIXIR}-erlang-${ERLANG}-alpine-${ALPINE} AS builder
 
 RUN apk update
 RUN apk add build-base git libtool autoconf automake
