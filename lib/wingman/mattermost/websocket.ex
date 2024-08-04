@@ -23,7 +23,7 @@ defmodule Wingman.Mattermost.Websocket do
         |> handle_event(state)
       { :ok, %{ seq_reply: _ } } -> { :ok, state }
       { :ok, msg } ->
-        Logger.warn "MESSAGE: #{inspect msg}"
+        Logger.warning "MESSAGE: #{inspect msg}"
         { :ok, state }
       {:error, _     } -> throw("Unable to decode message: #{msg}")
     end
@@ -35,7 +35,7 @@ defmodule Wingman.Mattermost.Websocket do
   end
 
   def handle_disconnect(_status, state) do
-    Logger.warn("Mattermost Websocket Disconnected!")
+    Logger.warning("Mattermost Websocket Disconnected!")
     { :reconnect, state }
   end
 
@@ -77,7 +77,7 @@ defmodule Wingman.Mattermost.Websocket do
   end
 
   def handle_event(event, _state) do
-    Logger.warn("Event received: #{inspect event}")
+    Logger.warning("Event received: #{inspect event}")
     { :ok, event.seq }
   end
 

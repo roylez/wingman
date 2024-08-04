@@ -24,6 +24,7 @@ defmodule Wingman.TelegramBot do
       {:error, reason} ->
         Logger.warning "Failed to start Telegram Bot: #{inspect reason}"
         {:stop, reason}
+    end
   end
 
   def send(origin, text, opts \\ []) do
@@ -41,12 +42,14 @@ defmodule Wingman.TelegramBot do
           Wingman.Handler.handle(m)
         end
       end
+      offset = case List.last(updates) do
+        %{ update_id: update_id } -> update_id + 1
+        _ -> offset
+      end
+      { :noreply, %{ state | offset: offset } }
+    else
+      _ -> {:noreply, state}
     end
-    offset = case List.last(updates) do
-      %{ update_id: update_id } -> update_id + 1
-      _ -> offset
-    end
-    { :noreply, %{ state | offset: offset } }
   end
 
   def handle_cast({:send, text}, state) do
@@ -57,8 +60,8 @@ defmodule Wingman.TelegramBot do
     {:ok, %{ message_id: tg_msg_id }} =
       case TG.request(:send_message, [chat_id: state.chat_id, text: text, parse_mode: "Markdown"] ++ opts) do
         {:error, %{ reason: reason }} ->
-          Logger.warn "Telegram send error: #{reason}"
-          Logger.warn "Original message: #{text}"
+          Logger.warning "Telegram send error: #{reason}"
+          Logger.warning "Original message: #{text}"
         {:ok, res} -> {:ok, res}
       end
     Cache.set(tg_msg_id, origin)

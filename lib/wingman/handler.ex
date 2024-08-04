@@ -110,8 +110,8 @@ defmodule Wingman.Handler do
       {:ok, _, _msg} ->
         Logger.info "<- TELEGRAM #{channel_id}: #{text}"
       {:error, _, msg} ->
-        Logger.warn "<x TELEGRAM #{channel_id}: #{text}"
-        Logger.warn inspect(msg)
+        Logger.warning "<x TELEGRAM #{channel_id}: #{text}"
+        Logger.warning inspect(msg)
     end
     {:noreply, state}
   end
@@ -145,8 +145,8 @@ defmodule Wingman.Handler do
       {:ok, 200, _, _} ->
         Logger.info "-> WEBHOOK : response 200"
       {_, status, _, _}=resp ->
-        Logger.warn "x> WEBHOOK : response #{status}"
-        Logger.warn inspect(resp)
+        Logger.warning "x> WEBHOOK : response #{status}"
+        Logger.warning inspect(resp)
     end
   end
 
