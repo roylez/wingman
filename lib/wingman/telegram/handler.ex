@@ -1,11 +1,11 @@
 require Logger
 
-defmodule Wingman.Handler do
+defmodule Wingman.Telegram.Handler do
   use GenServer
 
   alias Wingman.Mattermost, as: MM
   alias Wingman.Telegram, as: TG
-  alias Wingman.{ Cache, TelegramBot }
+  alias Wingman.{ Cache, Telegram.Bot }
 
   @bot_commands [
     on: "Enable Forwarding",
@@ -81,20 +81,20 @@ defmodule Wingman.Handler do
   end
   # telegram in
   def handle_cast(%{ text: "/on" }, %{ enabled: false }=state) do
-    TelegramBot.send("🙉 Message forwarding from Mattermost is set to **ON**!")
+    Bot.send("🙉 Message forwarding from Mattermost is set to **ON**!")
     { :noreply, %{ state| enabled: true } }
   end
   def handle_cast(%{ text: "/off" }, %{ enabled: true }=state) do
-    TelegramBot.send("🙈 Message forwarding from Mattermost is set to **OFF**!")
+    Bot.send("🙈 Message forwarding from Mattermost is set to **OFF**!")
     { :noreply, %{ state| enabled: false } }
   end
   def handle_cast(%{ text: "/" <> _ }, state), do: { :noreply, state }
   def handle_cast(:on, state) do
-    TelegramBot.send("🕘 Message forwarding from Mattermost is set to **ON**!")
+    Bot.send("🕘 Message forwarding from Mattermost is set to **ON**!")
     { :noreply, %{ state| enabled: true } }
   end
   def handle_cast(:off, state) do
-    TelegramBot.send("🕕 Message forwarding from Mattermost is set to **OFF**!")
+    Bot.send("🕕 Message forwarding from Mattermost is set to **OFF**!")
     { :noreply, %{ state| enabled: false } }
   end
   def handle_cast(%{ text: _text }, %{ enabled: false }=state) do
@@ -152,8 +152,8 @@ defmodule Wingman.Handler do
 
   defp _send_telegram(origin, data, notify) do
     case notify do
-      true -> TelegramBot.send(origin, data)
-      false -> TelegramBot.send(origin, data, disable_notification: true)
+      true  -> Bot.send(origin, data)
+      false -> Bot.send(origin, data, disable_notification: true)
     end
   end
 

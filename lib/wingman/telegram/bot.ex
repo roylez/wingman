@@ -1,4 +1,4 @@
-defmodule Wingman.TelegramBot do
+defmodule Wingman.Telegram.Bot do
   use GenServer
 
   require Logger

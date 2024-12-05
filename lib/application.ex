@@ -10,8 +10,7 @@ defmodule Wingman.Application do
     children = [
       Wingman.Mattermost.Websocket,
       Wingman.Mattermost,
-      Wingman.Handler,
-      Wingman.TelegramBot,
+      Wingman.Telegram.Sup,
       Wingman.Cache,
       Wingman.Cron,
     ]
