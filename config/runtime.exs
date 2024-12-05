@@ -22,8 +22,8 @@ if env_get("WINGMAN_ENABLE_AT") do
   config :wingman, Wingman.Cron,
     timezone: env_get("TZ") || "UTC",
     jobs: [
-      {env_get("WINGMAN_ENABLE_AT"), {Wingman.Handler, :on, []}},
-      {env_get("WINGMAN_DISABLE_AT"), {Wingman.Handler, :off, []}}
+      {env_get("WINGMAN_ENABLE_AT"), {Wingman.Telegram.Handler, :on, []}},
+      {env_get("WINGMAN_DISABLE_AT"), {Wingman.Telegram.Handler, :off, []}}
     ]
 
 end

@@ -16,8 +16,8 @@ defmodule Common.Cache do
       import Cachex.Spec
 
       def child_spec(_) do
-        %{ 
-          id: __MODULE__, 
+        %{
+          id: __MODULE__,
           start: {__MODULE__, :start_link, [nil]},
           type: :supervisor,
           restart: :permanent
@@ -26,15 +26,11 @@ defmodule Common.Cache do
 
       def start_link(_) do
         Cachex.start_link(__MODULE__,
-          fallback: fallback(default: &default_fallback/1),
-          expiration: expiration(default: :timer.seconds(unquote(ttl)))
+          expiration: expiration(default: unquote(ttl) && :timer.seconds(unquote(ttl)) || nil)
         )
       end
 
-      def default_fallback(_),    do: { :ignore, nil }
-      def default_fallback(_, _), do: { :ignore, nil }
-
-      defoverridable start_link: 1, default_fallback: 1, default_fallback: 2
+      defoverridable start_link: 1
     end
 
     [ other_ast | ast ]

@@ -39,7 +39,7 @@ defmodule Wingman.Telegram.Bot do
       for u <- updates do
         with %{ message: %{ chat: %{ id: ^chat_id } }=m } <- u do
           Logger.debug inspect(u, pretty: true)
-          Wingman.Handler.handle(m)
+          Wingman.Telegram.Handler.handle(m)
         end
       end
       offset = case List.last(updates) do
@@ -64,7 +64,7 @@ defmodule Wingman.Telegram.Bot do
           Logger.warning "Original message: #{text}"
         {:ok, res} -> {:ok, res}
       end
-    Cache.set(tg_msg_id, origin)
+    Cache.put(tg_msg_id, origin)
     { :noreply, state }
   end
 

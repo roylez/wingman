@@ -45,7 +45,7 @@ defmodule Wingman.Mattermost.Websocket do
   end
 
   def handle_event(%{ event: "posted", seq: seq }=event, _state) do
-    Wingman.Handler.handle(event.data)
+    Wingman.Telegram.Handler.handle(event.data)
     { :ok, seq }
   end
 

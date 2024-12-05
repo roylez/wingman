@@ -31,11 +31,11 @@ defmodule Wingman.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:tesla, "~> 1.12.0"},
+      {:tesla, "~> 1.13.0"},
       {:jason, ">= 1.0.0"},
       {:hackney, "~> 1.17"},
       {:websockex, "~> 0.4"},
-      {:cachex, "~> 3.5"},
+      {:cachex, "~> 4.0"},
       {:tzdata, "~> 1.1"},
       {:quantum, "~> 3.0"},
       {:telegram, github: "visciang/telegram", tag: "0.22.4"}
