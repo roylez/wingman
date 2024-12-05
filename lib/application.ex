@@ -8,8 +8,7 @@ defmodule Wingman.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      Wingman.Mattermost.Websocket,
-      Wingman.Mattermost,
+      Wingman.Mattermost.Sup,
       Wingman.Telegram.Sup,
       Wingman.Cache,
       Wingman.Cron,
