@@ -3,15 +3,21 @@ require Logger
 defmodule Wingman.Mattermost.Websocket do
   use WebSockex
 
+  @ping_timeout 30_000
+
+  defstruct [ seq: 0, connected: false, pong_received: false ]
+
   def start_link(_) do
     endpoint = Application.get_env(:wingman, :mattermost)[:api_url]
     header = [ {"authorization", "Bearer #{Application.get_env(:wingman, :mattermost)[:token]}" } ]
     WebSockex.start_link(
       endpoint <> "/websocket",
       __MODULE__,
-      0,
+      %__MODULE__{},
       name: __MODULE__,
-      extra_headers: header
+      extra_headers: header,
+      async: true,
+      handle_initial_conn_failure: true
     )
   end
 
@@ -19,7 +25,7 @@ defmodule Wingman.Mattermost.Websocket do
     case Jason.decode(msg, keys: :atoms) do
       {:ok, %{ event: _ }=event } ->
         event
-        |> parse_event()
+        |> _parse_event()
         |> handle_event(state)
       { :ok, %{ seq_reply: _ } } -> { :ok, state }
       { :ok, msg } ->
@@ -29,27 +35,42 @@ defmodule Wingman.Mattermost.Websocket do
     end
   end
 
-  def handle_connect(_conn, state) do
-    Logger.info("Mattermost Websocket Connected!")
-    {:ok, state}
+  def handle_pong(_, %{ connected: false }=state), do: {:ok, state}
+  def handle_pong(_, %{ connected: true }=state),  do: {:ok, %{ state| pong_received: true }}
+
+  def handle_connect(_conn, _state) do
+    Process.send_after(self(), :ping_timeout, @ping_timeout)
+    { :ok, %__MODULE__{ pong_received: true, connected: true } }
   end
 
-  def handle_disconnect(_status, state) do
-    Logger.warning("Mattermost Websocket Disconnected!")
-    { :reconnect, state }
+  # this happens too often to be useful
+  def handle_disconnect(%{ reason: {:remote, :closed} }, _state), do: {:reconnect, %__MODULE__{}}
+  def handle_disconnect(%{ reason: reason }, _state) do
+    Logger.warning "Mattermost websocket disconnected, reason: #{inspect reason}"
+    { :reconnect, %__MODULE__{} }
   end
 
-  def handle_event(%{ event: "hello", seq: seq }, _state) do
+  def handle_info(:ping_timeout, state) do
+    case state do
+      %{ pong_received: true } ->
+        Process.send_after(self(), :ping_timeout, @ping_timeout)
+        {:reply, {:ping, ""}, %{ state| pong_received: false }}
+      %{ pong_received: false } ->
+        {:close, state}
+    end
+  end
+
+  def handle_event(%{ event: "hello", seq: seq }, state) do
     reply = Jason.encode!(%{ seq: seq+1 , action: "get_statuses"})
-    { :reply, {:text, reply}, seq+1 }
+    { :reply, {:text, reply}, %{ state | seq: seq+1 } }
   end
 
-  def handle_event(%{ event: "posted", seq: seq }=event, _state) do
+  def handle_event(%{ event: "posted", seq: seq }=event, state) do
     Wingman.Telegram.Handler.handle(event.data)
-    { :ok, seq }
+    { :ok, %{ state |seq: seq } }
   end
 
-  def handle_event(%{ event: e, seq: seq }, _state)
+  def handle_event(%{ event: e, seq: seq }, state)
   when e in ~w(
     channel_updated
     channel_viewed
@@ -73,12 +94,11 @@ defmodule Wingman.Mattermost.Websocket do
     user_updated
   )
   do
-    { :ok, seq }
+    { :ok, %{ state | seq: seq } }
   end
 
-  def handle_event(event, _state) do
-    Logger.warning("Event received: #{inspect event}")
-    { :ok, event.seq }
+  def handle_event(%{ event: _e, seq: seq }, state) do
+    { :ok, %{ state | seq: seq } }
   end
 
   def handle_cast(frame, state) do
@@ -90,7 +110,7 @@ defmodule Wingman.Mattermost.Websocket do
     exit(:normal)
   end
 
-  defp parse_event(event) do
+  defp _parse_event(event) do
     e =event
        |> update_in(~w(data mentions)a, &( if &1 do Jason.decode!(&1, keys: :atoms) else nil end))
        |> update_in(~w(data post)a, &( if &1 do Jason.decode!(&1, keys: :atoms) else nil end))
