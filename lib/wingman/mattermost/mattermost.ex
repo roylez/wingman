@@ -1,8 +1,6 @@
 defmodule Wingman.Mattermost do
   use Agent
 
-  @team "canonical"
-
   defstruct name: nil, client: nil
 
   def start_link(_) do
@@ -33,6 +31,10 @@ defmodule Wingman.Mattermost do
   def get(path, opts \\ []) do
     client()
     |> Tesla.get(path, opts)
+  end
+
+  def team() do
+    Application.get_env(:wingman, :mattermost)[:team]
   end
 
   def post(path, body, opts \\ [])
@@ -101,7 +103,7 @@ defmodule Wingman.Mattermost do
   end
 
   def channel(chan) do
-    get("/teams/name/#{@team}/channels/name/:name", opts: [path_params: [name: chan]])
+    get("/teams/name/#{team()}/channels/name/:name", opts: [path_params: [name: chan]])
   end
 
   def post_create(data) do
