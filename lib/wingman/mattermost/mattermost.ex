@@ -33,10 +33,6 @@ defmodule Wingman.Mattermost do
     |> Tesla.get(path, opts)
   end
 
-  def team() do
-    Application.get_env(:wingman, :mattermost)[:team]
-  end
-
   def post(path, body, opts \\ [])
   def post(path, body, opts) when not is_binary(body) do
     post(path, Jason.encode!(body), opts)
@@ -90,6 +86,10 @@ defmodule Wingman.Mattermost do
     get("/users/:id/status", opts: [path_params: [id: id]])
   end
 
+  def user_channels(user_id, team_id) do
+    get("/users/:user_id/teams/:team_id/channels/members", opts: [path_params: [user_id: user_id, team_id: team_id]])
+  end
+
   def user_status_update(data) do
     put("/users/me/status", data)
   end
@@ -102,12 +102,16 @@ defmodule Wingman.Mattermost do
     get("/teams")
   end
 
-  def channel(chan) do
-    get("/teams/name/#{team()}/channels/name/:name", opts: [path_params: [name: chan]])
+  def channel(id) do
+    get("/channels/:id", opts: [path_params: [id: id]])
   end
 
   def post_create(data) do
     post("/posts", data)
+  end
+
+  def typing( channel ) do
+    post("/users/me/typing", %{ channel_id: channel })
   end
 
 end

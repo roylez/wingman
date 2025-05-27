@@ -3,8 +3,7 @@ import Common.Util
 
 config :wingman, :mattermost,
   api_url: URI.merge(env_get("WINGMAN_MATTERMOST_URL"), "/api/v4") |> URI.to_string(),
-  token:   env_get("WINGMAN_MATTERMOST_TOKEN"),
-  team:    env_get("WINGMAN_MATTERMOST_TEAM")
+  token:   env_get("WINGMAN_MATTERMOST_TOKEN")
 
 config :wingman,
   webhook: env_get("WINGMAN_WEBHOOK"),
