@@ -13,13 +13,14 @@ defmodule Wingman.Telegram.Handler do
   ]
 
   defstruct [
-    highlights: nil,
-    channels: nil,
-    webhook: nil,
-    telegram: nil,
-    last_channel: nil,
-    enabled: false,
-    me: nil,
+    highlights:       nil,
+    channels:         nil,
+    ignored_channels: nil,
+    webhook:          nil,
+    telegram:         nil,
+    last_channel:     nil,
+    enabled:          false,
+    me:               nil,
   ]
 
   def start_link(_) do
@@ -27,7 +28,8 @@ defmodule Wingman.Telegram.Handler do
   end
 
   def init(_) do
-    channels = Application.get_env(:wingman, :channels)
+    channels         = Application.get_env(:wingman, :channels)
+    ignored_channels = Application.get_env(:wingman, :ignored_channels)
     me = MM.me()
     Logger.info "USER ID: #{me}"
     Logger.info "MATTERMOST CHANNELS: #{inspect channels}"
@@ -36,6 +38,7 @@ defmodule Wingman.Telegram.Handler do
       highlights: ~r(#{Application.get_env(:wingman, :highlights)})iu,
       telegram:   Application.get_env(:wingman, :telegram),
       channels:   channels,
+      ignored_channels: ignored_channels,
       me: me,
     }, { :continue, :set_commands } }
   end
@@ -65,6 +68,8 @@ defmodule Wingman.Telegram.Handler do
         type == "D" ->
           _send_message(state, post, "🗣 #{sender}: #{post.message}")
           {:noreply, %{ state| last_channel: post.channel_id }}
+        # ignored_channels
+        chan in state.ignored_channels -> {:noreply, state }
         # highlights
         String.match?(post.message, state.highlights) ->
           _send_message(state, post, "💬 *#{chan}* - #{sender}: #{post.message}")

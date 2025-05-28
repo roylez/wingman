@@ -10,6 +10,7 @@ config :wingman,
   highlights: env_get("WINGMAN_HIGHLIGHTS"),
   debug: env_get("WINGMAN_DEBUG") == "1",
   channels: env_get("WINGMAN_CHANNELS", :list),
+  ignored_channels: env_get("WINGMAN_IGNORED_CHANNELS", :list),
   telegram: {
     env_get("WINGMAN_TELEGRAM_TOKEN"),
     env_get("WINGMAN_TELEGRAM_CHAT_ID", :integer)
