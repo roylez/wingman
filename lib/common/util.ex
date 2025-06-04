@@ -23,7 +23,7 @@ defmodule Common.Util do
 
   def env_get(var, :list) do
     var
-    |> System.get_env(var)
+    |> System.get_env("")
     |> String.split(",")
     |> Enum.reject(&(byte_size(&1)==0))
   end

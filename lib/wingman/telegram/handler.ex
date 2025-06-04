@@ -33,6 +33,7 @@ defmodule Wingman.Telegram.Handler do
     me = MM.me()
     Logger.info "USER ID: #{me}"
     Logger.info "MATTERMOST CHANNELS: #{inspect channels}"
+    Logger.info "MATTERMOST IGNORED CHANNELS: #{inspect ignored_channels}"
     { :ok, %__MODULE__{
       webhook:    Application.get_env(:wingman, :webhook),
       highlights: ~r(#{Application.get_env(:wingman, :highlights)})iu,
